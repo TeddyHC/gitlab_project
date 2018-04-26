@@ -35,23 +35,57 @@ class GitUpdate
 
     public function run()
     {
+        // 检查存放目录是否存在
+        $this->checkStock();
+
         // 获取所有可用项目
         $projects = $this->_getProjects();
         $projectRepos = $this->_getProjectRepos($projects);
 
-        foreach ($projectRepos as $namespace => $repo) {
-            var_dump($namespace.' '.$repo);
-            /* passthru('cd $HOME/code/gitlab; git clone '.$repo.' ./'.$namespace); */
-        }
-        // 检查本地项目
         // 存在则更新，不存在clone
-        /* $this->_updateProjects($projects); */
-        /* $this->_cloneProjects($projects); */
+        $existedProjects = $newProject = [];
+        foreach ($projectRepos as $namespace => $repo) {
+            if ($this->_projectIsExist($namespace)) {
+                $existedProjects[$namespace] = $repo;
+            } else {
+                $newProject[$namespace] = $repo;
+            }
+        }
+        /* var_dump($newProject); */
+        $this->_updateExistedProjects($existedProjects);
+        /* $this->_cloneNewProjects($newProject); */
     }
 
-    private function _projectIsExist($repo)
+    private function _updateExistedProjects($projects)
     {
-        return file_exists($this->config->storePath.'/'.$repo);
+        $i = 0;
+        foreach ($projects as $namespace => $repo) {
+            var_dump($namespace );
+            $res = exec('cd '.$this->config->storePath.'/'.$namespace.'; git status');
+            var_dump($res );
+            if ($res = 'nothing to commit, working tree clean') {
+                passthru('cd '.$this->config->storePath.'/'.$namespace.'; git checkout master; git pull');
+            }
+
+            $i++;
+            if ($i == 10) {
+                break;
+            }
+
+        }
+    }
+
+    private function _cloneNewProjects($projects)
+    {
+        foreach ($projects as $namespace => $repo) {
+            passthru('cd '.$this->config->storePath.'; git clone '.$repo.' ./'.$namespace);
+            break;
+        }
+    }
+
+    private function _projectIsExist($project)
+    {
+        return file_exists($this->config->storePath.'/'.$project);
     }
 
     public function checkStock()
@@ -84,14 +118,6 @@ class GitUpdate
         array_pop($projects);
 
         return $projects;
-    }
-
-    private function _updateProjects($projects)
-    {
-        foreach ($projects as $project) {
-            $command = 'cd ../'.$project.'; git pull; cd -';
-            passthru($command);
-        }
     }
 
     /**

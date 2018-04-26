@@ -15,10 +15,28 @@ class Config
 
     public $sshAlias = '';
 
-    public $storePath = '$HOME/gitlab';
+    public $storePath = '/code';
+
+    public $ignoreProjects = [
+        'test' => [
+            'foo',
+        ],
+    ];
 
     public function __construct()
     {
         $this->apiUrl = 'https://'.$this->baseUrl.'/api/'.$this->apiVersion.'/';
+    }
+
+    public function getIgnoreProjects()
+    {
+        $ignores = [];
+        foreach ($ignoreProjects as $vendor => $projects) {
+            foreach ($projects as $project) {
+                $ignores[] = $vendor.'/'.$project;
+            }
+        }
+
+        return $ignores;
     }
 }
