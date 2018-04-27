@@ -60,18 +60,26 @@ class GitUpdate
     {
         $i = 0;
         foreach ($projects as $namespace => $repo) {
-            var_dump($namespace );
-            $res = exec('cd '.$this->config->storePath.'/'.$namespace.'; git status');
-            var_dump($res );
-            if ($res = 'nothing to commit, working tree clean') {
-                passthru('cd '.$this->config->storePath.'/'.$namespace.'; git checkout master; git pull');
+            $gitStatus = exec('cd '.$this->config->storePath.'/'.$namespace.'; git status');
+            if ($gitStatus = 'nothing to commit, working tree clean'
+                || $gitStatus = 'no changes added to commit (use "git add" and/or "git commit -a")'
+            ) {
+                $coResult = exec('cd '.$this->config->storePath.'/'.$namespace.'; git checkout master', $arr);
+                if ($coResult == "Your branch is up to date with 'origin/master'.") {
+                    continue;
+                }
+                $result = shell_exec('cd '.$this->config->storePath.'/'.$namespace.'; git pull');
+                if ($result != 'Already up to date.') {
+                    var_dump($namespace);
+                    var_dump($gitStatus);
+                    echo $result."\n";
+                }
             }
 
             $i++;
-            if ($i == 10) {
-                break;
-            }
-
+            /* if ($i == 20) { */
+            /*     break; */
+            /* } */
         }
     }
 
@@ -95,10 +103,22 @@ class GitUpdate
         }
     }
 
-    private function _getProjectRepos($projects)
+    /**
+     * 根据project接口返回值，拿到项目的vendor, projectName, ssh_url
+     *
+     * @param array $projects 接口返回的项目数组
+     *
+     * @return array [vendor/projectName => $ssh_url, ...]
+     */
+    private function _getProjectRepos(array $projects)
     {
+        $ignores = $this->config->getIgnoreProjects();
         $projectNames = [];
         foreach ($projects as $project) {
+            if (in_array($project['path_with_namespace'], $ignores)) {
+                continue;
+            }
+            // 根据ssh config 替换url
             $repo = str_replace(
                 'git@ssh.'.$this->config->baseUrl.':'.$this->config->sshPort,
                 $this->config->sshAlias,
@@ -121,10 +141,63 @@ class GitUpdate
     }
 
     /**
-     * _addPrivateToken
+     * 获取所有可见项目
      *
-     * @param mixed $url
-     * @param string $privateToken
+     * @return mixed
+     */
+    private function _getProjects()
+    {
+        $url = $this->_getUrl();
+        $projects = [];
+
+        // 循环取所有页数据
+        $page = 1;
+        do {
+            $list = $this->_send($url, $page);
+            $projects = array_merge($projects, $list);
+            ++$page;
+        } while (count($list));
+
+        return $projects;
+    }
+
+    /**
+     * _getUrl
+     *
+     * @return string
+     */
+    private function _getUrl()
+    {
+        $url = $this->config->apiUrl.'projects?';
+        $this->_addPrivateToken($url);
+        $this->_addIsSimpleResponse($url);
+        $this->_addOrderLimit($url);
+
+        return $url;
+    }
+
+    /**
+     * 请求一页数据
+     * (为了不丢失数据，不提供pageSize参数, 保证每页请求条数一致)
+     *
+     * @param string $url  URL
+     * @param int $page    页号
+     *
+     * @return mixed
+     */
+    private function _send($url, $page)
+    {
+        $this->_addPageInfo($url, $page);
+        $response = $this->client->request('GET', $url);
+
+        return json_decode($response->getBody(), true);
+    }
+
+    /**
+     * Url中加上在gitlab中生成的privateToken
+     * (类似身份认证)
+     *
+     * @param string $url URL
      *
      * @return mixed
      */
@@ -136,8 +209,8 @@ class GitUpdate
     /**
      * _addIsSimpleResponse
      *
-     * @param mixed $url
-     * @param string $isSimple
+     * @param string $url      URL
+     * @param string $isSimple 返回一个简略的结果
      *
      * @return mixed
      */
@@ -160,42 +233,17 @@ class GitUpdate
         $url .= '&page='.$page.'&per_page='.$pageSize;
     }
 
+    /**
+     * _addOrderLimit
+     *
+     * @param string $url     URL
+     * @param string $orderBy 项目排序规则
+     * @param string $sort    生序/降序 (asc/desc)
+     *
+     * @return mixed
+     */
     private function _addOrderLimit(&$url, $orderBy = 'id', $sort = 'asc')
     {
         $url .= '&order_by='.$orderBy.'&sort='.$sort;
     }
-
-    private function _getUrl()
-    {
-        $url = $this->config->apiUrl.'projects?';
-        $this->_addPrivateToken($url);
-        $this->_addIsSimpleResponse($url);
-        $this->_addOrderLimit($url);
-
-        return $url;
-    }
-
-    private function _getProjects()
-    {
-        $url = $this->_getUrl();
-        $projects = [];
-
-        $page = 1;
-        do {
-            $list = $this->_send($url, $page);
-            $projects = array_merge($projects, $list);
-            ++$page;
-        } while (count($list));
-
-        return $projects;
-    }
-
-    private function _send($url, $page)
-    {
-        $this->_addPageInfo($url, $page);
-        $response = $this->client->request('GET', $url);
-
-        return json_decode($response->getBody(), true);
-    }
 }
-

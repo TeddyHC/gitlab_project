@@ -21,6 +21,7 @@ class Config
         'test' => [
             'foo',
         ],
+        'foo/bar'
     ];
 
     public function __construct()
@@ -31,9 +32,13 @@ class Config
     public function getIgnoreProjects()
     {
         $ignores = [];
-        foreach ($ignoreProjects as $vendor => $projects) {
-            foreach ($projects as $project) {
-                $ignores[] = $vendor.'/'.$project;
+        foreach ($this->ignoreProjects as $vendor => $projects) {
+            if (is_array($projects)) {
+                foreach ($projects as $project) {
+                    $ignores[] = $vendor.'/'.$project;
+                }
+            } else {
+                $ignores[] = $projects;
             }
         }
 
