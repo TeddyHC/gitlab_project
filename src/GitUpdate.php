@@ -51,14 +51,12 @@ class GitUpdate
                 $newProject[$namespace] = $repo;
             }
         }
-        /* var_dump($newProject); */
         $this->_updateExistedProjects($existedProjects);
-        /* $this->_cloneNewProjects($newProject); */
+        $this->_cloneNewProjects($newProject);
     }
 
     private function _updateExistedProjects($projects)
     {
-        $i = 0;
         foreach ($projects as $namespace => $repo) {
             $gitStatus = exec('cd '.$this->config->storePath.'/'.$namespace.'; git status');
             if ($gitStatus = 'nothing to commit, working tree clean'
@@ -75,11 +73,6 @@ class GitUpdate
                     echo $result."\n";
                 }
             }
-
-            $i++;
-            /* if ($i == 20) { */
-            /*     break; */
-            /* } */
         }
     }
 
@@ -87,7 +80,6 @@ class GitUpdate
     {
         foreach ($projects as $namespace => $repo) {
             passthru('cd '.$this->config->storePath.'; git clone '.$repo.' ./'.$namespace);
-            break;
         }
     }
 

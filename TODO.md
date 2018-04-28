@@ -4,4 +4,5 @@
 - mac 定时任务模版&& md
 - 记录切换前branch
 - 暂存代码的模块
-- 忽略项目
+- 没有master的情况
+- 可以读到数据，但是not allowed
