@@ -24,6 +24,12 @@ class GitUpdate
         $this->_setConfig();
     }
 
+    /**
+     * _setConfig
+     * 读取配置文件,自己的配置写到\config\MyConfig,继承Config
+     *
+     * @return null
+     */
     private function _setConfig()
     {
         if (class_exists('gitUpdate\config\MyConfig', true)) {
@@ -88,6 +94,12 @@ class GitUpdate
         return file_exists($this->config->storePath.'/'.$project);
     }
 
+    /**
+     * 检查有没有这个文件夹
+     * 没有先创建
+     *
+     * @return mixed
+     */
     public function checkStock()
     {
         if (!file_exists($this->config->storePath)) {
