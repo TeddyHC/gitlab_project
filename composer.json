@@ -1,5 +1,5 @@
 {
-    "name": "teddy/gitlab_project",
+    "name": "teddy-hc/gitlab_project",
     "description": "get gitlab available packages",
     "require": {
         "guzzlehttp/guzzle": "^6.3"
