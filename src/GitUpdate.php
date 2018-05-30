@@ -64,6 +64,7 @@ class GitUpdate
     private function _updateExistedProjects($projects)
     {
         foreach ($projects as $namespace => $repo) {
+            var_dump($namespace );
             $gitStatus = exec('cd '.$this->config->storePath.'/'.$namespace.'; git status');
             if ($gitStatus = 'nothing to commit, working tree clean'
                 || $gitStatus = 'no changes added to commit (use "git add" and/or "git commit -a")'
