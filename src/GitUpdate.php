@@ -69,14 +69,8 @@ class GitUpdate
             if ($gitStatus = 'nothing to commit, working tree clean'
                 || $gitStatus = 'no changes added to commit (use "git add" and/or "git commit -a")'
             ) {
-                $coResult = exec('cd '.$this->config->storePath.'/'.$namespace.'; git checkout master', $arr);
-                if ($coResult == "Your branch is up to date with 'origin/master'.") {
-                    continue;
-                }
-                $result = shell_exec('cd '.$this->config->storePath.'/'.$namespace.'; git pull');
+                $result = shell_exec('cd '.$this->config->storePath.'/'.$namespace.'; git checkout master; git pull');
                 if ($result != 'Already up to date.') {
-                    var_dump($namespace);
-                    var_dump($gitStatus);
                     echo $result."\n";
                 }
             }
