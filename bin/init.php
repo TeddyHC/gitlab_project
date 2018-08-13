@@ -6,4 +6,5 @@ require_once __DIR__.'/../Loader.php';
 
 use gitUpdate\src\GitUpdate;
 
-(new GitUpdate())->run();
+$project = $argc > 1 ? $argv[1]: null;
+(new GitUpdate())->run($project);

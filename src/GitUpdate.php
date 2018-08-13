@@ -39,13 +39,21 @@ class GitUpdate
         }
     }
 
-    public function run()
+    public function run($target = null)
     {
         // 检查存放目录是否存在
         $this->checkStock();
 
-        // 获取所有可用项目
-        $projects = $this->_getProjects();
+        if ($target) {
+            $this->getOne($target);
+        } else {
+            $this->getAll();
+        }
+    }
+
+    private function getOne($target)
+    {
+        $projects = $this->getProjects($target);
         $projectRepos = $this->_getProjectRepos($projects);
 
         // 存在则更新，不存在clone
@@ -57,14 +65,32 @@ class GitUpdate
                 $newProject[$namespace] = $repo;
             }
         }
-        $this->_updateExistedProjects($existedProjects);
-        $this->_cloneNewProjects($newProject);
+        $this->updateExistedProjects($existedProjects);
+        $this->cloneNewProjects($newProject);
     }
 
-    private function _updateExistedProjects($projects)
+    private function getAll()
+    {
+        // 获取所有可用项目
+        $projects = $this->getProjects();
+        $projectRepos = $this->_getProjectRepos($projects);
+
+        // 存在则更新，不存在clone
+        $existedProjects = $newProject = [];
+        foreach ($projectRepos as $namespace => $repo) {
+            if ($this->_projectIsExist($namespace)) {
+                $existedProjects[$namespace] = $repo;
+            } else {
+                $newProject[$namespace] = $repo;
+            }
+        }
+        $this->updateExistedProjects($existedProjects);
+        $this->cloneNewProjects($newProject);
+    }
+
+    private function updateExistedProjects(array $projects)
     {
         foreach ($projects as $namespace => $repo) {
-            var_dump($namespace );
             $gitStatus = exec('cd '.$this->config->storePath.'/'.$namespace.'; git status');
             if ($gitStatus = 'nothing to commit, working tree clean'
                 || $gitStatus = 'no changes added to commit (use "git add" and/or "git commit -a")'
@@ -77,7 +103,7 @@ class GitUpdate
         }
     }
 
-    private function _cloneNewProjects($projects)
+    private function cloneNewProjects(array $projects)
     {
         foreach ($projects as $namespace => $repo) {
             passthru('cd '.$this->config->storePath.'; git clone '.$repo.' ./'.$namespace);
@@ -144,9 +170,13 @@ class GitUpdate
      *
      * @return mixed
      */
-    private function _getProjects()
+    private function getProjects($target = null)
     {
-        $url = $this->_getUrl();
+        $url = $this->getUrl();
+        if($target) {
+            $this->addSerarch($url, $target);
+        }
+        var_dump($url);
         $projects = [];
 
         // 循环取所有页数据
@@ -161,11 +191,11 @@ class GitUpdate
     }
 
     /**
-     * _getUrl
+     * Get Url
      *
      * @return string
      */
-    private function _getUrl()
+    private function getUrl()
     {
         $url = $this->config->apiUrl.'projects?';
         $this->_addPrivateToken($url);
@@ -244,5 +274,10 @@ class GitUpdate
     private function _addOrderLimit(&$url, $orderBy = 'id', $sort = 'asc')
     {
         $url .= '&order_by='.$orderBy.'&sort='.$sort;
+    }
+
+    private function addSerarch(&$url, $content)
+    {
+        $url .= '&search='.urlencode($content);
     }
 }
