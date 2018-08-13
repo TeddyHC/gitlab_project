@@ -29,6 +29,9 @@ class Config
         $this->apiUrl = 'https://'.$this->baseUrl.'/api/'.$this->apiVersion.'/';
     }
 
+    /**
+     * @return array
+     */
     public function getIgnoreProjects()
     {
         $ignores = [];
