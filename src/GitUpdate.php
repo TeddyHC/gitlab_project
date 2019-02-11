@@ -14,6 +14,7 @@ class GitUpdate
 {
     private $client;
     private $config;
+    private $ignoreRules;
 
     /**
      * __construct.
@@ -22,6 +23,7 @@ class GitUpdate
     {
         $this->client = new \GuzzleHttp\Client();
         $this->_setConfig();
+        $this->ignoreRules = $this->config->getIgnoreRules();
     }
 
     /**
@@ -40,25 +42,31 @@ class GitUpdate
     /**
      * @param null $target
      */
-    public function run($target = null)
+    public function run($namespace = null, $project = null)
     {
         // 检查存放目录是否存在
         $this->checkStock();
 
-        if ($target) {
-            $this->getOne($target);
-        } else {
-            $this->getAll();
+        $this->getProjects($namespace, $project);
+    }
+
+    /**
+     * 检查有没有这个文件夹
+     * 没有先创建.
+     */
+    private function checkStock()
+    {
+        if (!file_exists($this->config->storePath)) {
+            shell_exec('mkdir -p '.$this->config->storePath);
         }
     }
 
     /**
      * @param $target
      */
-    private function getOne($target)
+    private function getProjects($namespace, $project)
     {
-        $projects = $this->getProjects($target);
-        $projectRepos = $this->_getProjectRepos($projects);
+        $projectRepos = $this->getProjectRepos($namespace, $project);
 
         // 存在则更新，不存在clone
         $existedProjects = $newProject = [];
@@ -71,6 +79,14 @@ class GitUpdate
         }
         $this->updateExistedProjects($existedProjects);
         $this->cloneNewProjects($newProject);
+    }
+
+    private function getProjectRepos($namespace, $target)
+    {
+        // 获取所有可用项目
+        $projects = $this->getGitLabProjects($target);
+
+        return $this->_getProjectRepos($projects, $namespace);
     }
 
     /**
@@ -127,16 +143,6 @@ class GitUpdate
         return file_exists($this->config->storePath.'/'.$project);
     }
 
-    /**
-     * 检查有没有这个文件夹
-     * 没有先创建.
-     */
-    public function checkStock()
-    {
-        if (!file_exists($this->config->storePath)) {
-            shell_exec('mkdir -p '.$this->config->storePath);
-        }
-    }
 
     /**
      * 根据project接口返回值，拿到项目的vendor, projectName, ssh_url.
@@ -145,11 +151,16 @@ class GitUpdate
      *
      * @return array [vendor/projectName => $ssh_url, ...]
      */
-    private function _getProjectRepos(array $projects)
+    private function _getProjectRepos(array $projects, $namespace)
     {
         $ignores = $this->config->getIgnoreProjects();
         $projectNames = [];
         foreach ($projects as $project) {
+            $vendor = $project['namespace'];
+            if ($vendor['name'] != $namespace) {
+                continue;
+            }
+
             if (in_array($project['path_with_namespace'], $ignores)) {
                 continue;
             }
@@ -169,6 +180,17 @@ class GitUpdate
         return $projectNames;
     }
 
+    public function needUpdate($vendor, $project)
+    {
+        foreach ($this->ignoreRules as $rule) {
+            if (in_array($vendor)) {
+            }
+            if (1) {
+            }
+        }
+        return true;
+    }
+
     /**
      * 获取所有可见项目.
      *
@@ -176,7 +198,7 @@ class GitUpdate
      *
      * @return mixed
      */
-    private function getProjects($target = null)
+    private function getGitLabProjects($target = null)
     {
         $url = $this->getUrl();
         if ($target) {

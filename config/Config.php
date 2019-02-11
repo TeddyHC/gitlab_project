@@ -24,6 +24,11 @@ class Config
         'foo/bar'
     ];
 
+    public $ignoreRules = [
+        'foo/*',
+        '*/bar',
+    ];
+
     public function __construct()
     {
         $this->apiUrl = 'https://'.$this->baseUrl.'/api/'.$this->apiVersion.'/';
@@ -46,5 +51,19 @@ class Config
         }
 
         return $ignores;
+    }
+
+    public function getIgnoreRules()
+    {
+        $ignoreRules = [];
+        foreach ($this->ignoreRules as $vendor => $rules) {
+            if (is_array($rules)) {
+                $ignoreRules[] = $vendor.'/'.$rules;
+            } else {
+                $ignoreRules[] = $rules;
+            }
+        }
+
+        return $ignoreRules;
     }
 }
