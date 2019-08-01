@@ -6,12 +6,12 @@ class Config
 {
     public $baseUrl = 'www.gitlab.com';
 
-    public $sshPort = '22';
+    public $apiVersion = 'v4';
 
     public $privateToken = '';
 
-    public $apiVersion = 'v4';
-    public $apiUrl;
+    // use default port (22)
+    public $sshPort = '';
 
     public $sshAlias = '';
 
@@ -28,6 +28,8 @@ class Config
         'foo/*',
         '*/bar',
     ];
+
+    public $apiUrl;
 
     public function __construct()
     {

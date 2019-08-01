@@ -4,6 +4,8 @@ namespace gitUpdate\src;
 
 use gitUpdate\config\Config;
 use gitUpdate\config\MyConfig;
+use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
 
 /**
  * Class: gitUpdate.
@@ -21,7 +23,7 @@ class GitUpdate
      */
     public function __construct()
     {
-        $this->client = new \GuzzleHttp\Client();
+        $this->client = new Client();
         $this->_setConfig();
         $this->ignoreRules = $this->config->getIgnoreRules();
     }
@@ -40,7 +42,8 @@ class GitUpdate
     }
 
     /**
-     * @param null $target
+     * @param null $namespace
+     * @param null $project
      */
     public function run($namespace = null, $project = null)
     {
@@ -62,7 +65,8 @@ class GitUpdate
     }
 
     /**
-     * @param $target
+     * @param $namespace
+     * @param $project
      */
     private function getProjects($namespace, $project)
     {
@@ -166,13 +170,14 @@ class GitUpdate
             }
             $repo = $project['ssh_url_to_repo'];
 
+            $search = 'git@'.$this->config->baseUrl;
+            if ($this->config->sshPort) {
+                $search .= ':'.$this->config->sshPort;
+            }
+
             // 根据ssh config 替换url
             if ($this->config->sshAlias) {
-                $repo = str_replace(
-                    'git@ssh.'.$this->config->baseUrl.':'.$this->config->sshPort,
-                    $this->config->sshAlias,
-                    $project['ssh_url_to_repo']
-                );
+                $repo = str_replace($search, $this->config->sshAlias, $project['ssh_url_to_repo']);
             }
             $projectNames[$project['path_with_namespace']] = $repo;
         }
@@ -214,7 +219,7 @@ class GitUpdate
                 $projects = array_merge($projects, $list);
                 ++$page;
             } while (count($list));
-        } catch (\GuzzleHttp\Exception\GuzzleException $e) {
+        } catch (GuzzleException $e) {
             var_dump($e);
         }
 
@@ -243,7 +248,7 @@ class GitUpdate
      * @param string $url  URL
      * @param int    $page 页号
      *
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws GuzzleException
      *
      * @return mixed
      */
