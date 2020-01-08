@@ -235,7 +235,7 @@ class GitUpdate
     {
         $url = $this->config->apiUrl.'projects?';
         $this->_addPrivateToken($url);
-        $this->addIsSimpleResponse($url);
+        /* $this->addIsSimpleResponse($url); */
         $this->_addOrderLimit($url);
 
         return $url;
