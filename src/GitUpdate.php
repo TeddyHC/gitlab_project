@@ -161,7 +161,7 @@ class GitUpdate
         $projectNames = [];
         foreach ($projects as $project) {
             $vendor = $project['namespace'];
-            if ($vendor['name'] != $namespace) {
+            if ($namespace != null && $vendor['name'] != $namespace) {
                 continue;
             }
 
